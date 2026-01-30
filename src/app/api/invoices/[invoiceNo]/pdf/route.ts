@@ -1,27 +1,24 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server"; // Gunakan NextRequest
 import fs from "fs";
 import path from "path";
 
+// Gunakan NextRequest dan ganti struktur parameter kedua menjadi 'context'
 export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ invoiceNo: string }> }
+  req: NextRequest, 
+  context: { params: Promise<{ invoiceNo: string }> }
 ) {
   try {
-    // Next terbaru: params itu Promise -> WAJIB await
-    const { invoiceNo } = await params;
+    // Sesuai aturan baru: params harus di-await dari context
+    const { invoiceNo } = await context.params;
 
     if (!invoiceNo) {
       return NextResponse.json({ error: "invoiceNo is required" }, { status: 400 });
     }
 
     const decoded = decodeURIComponent(invoiceNo);
-
     const STORAGE_DIR = path.join(process.cwd(), "storage");
     const PDF_DIR = path.join(STORAGE_DIR, "pdf");
 
-    // kamu simpan file pakai underscore, dan format kamu: 0006_INV-FDL_I_2026.pdf
-    // ini berarti invoiceNo decoded harus jadi: 0006/INV-FDL/I/2026
-    // lalu diganti slash -> underscore
     const fileName = `${decoded.replaceAll("/", "_")}.pdf`;
     const pdfPath = path.join(PDF_DIR, fileName);
 
@@ -31,7 +28,6 @@ export async function GET(
           error: "PDF not found",
           invoiceNo: decoded,
           fileName,
-          hint: "Pastikan file ada di storage/pdf dan namanya sesuai pattern invoiceNo.replaceAll('/', '_').pdf",
         },
         { status: 404 }
       );
