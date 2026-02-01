@@ -17,6 +17,8 @@ import { replaceAll } from "@/libs/html";
 // --- TYPE DEFINITIONS ---
 type Payload = {
   date: string;
+  invoice_no?: string; // Tambahan untuk manual input
+  sj_no?: string;      // Tambahan untuk manual input
   po_number?: string;
   customer_id?: number;
   customer_new?: { name: string; address?: string; npwp?: string };
@@ -44,7 +46,7 @@ function ensureDir(p: string) {
 }
 
 // =================================================================================
-// FUNGSI EXCEL LEDGER (PROFEISONAL LOOK)
+// FUNGSI EXCEL LEDGER
 // =================================================================================
 
 async function ensureLedgerXlsx() {
@@ -53,7 +55,6 @@ async function ensureLedgerXlsx() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Ledger");
 
-    // Definisi Kolom & Lebar
     ws.columns = [
       { header: "TANGGAL", key: "date", width: 15 },
       { header: "NO. INVOICE", key: "invoiceNo", width: 25 },
@@ -63,7 +64,6 @@ async function ensureLedgerXlsx() {
       { header: "SALDO (BALANCE)", key: "balance", width: 25 },
     ];
 
-    // Styling Header (Biru Akuntansi)
     const headerRow = ws.getRow(1);
     headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
     headerRow.fill = {
@@ -103,7 +103,6 @@ async function appendLedgerXlsxRow(args: {
   const newBalance = lastBalance + args.debit - args.credit;
   const row = ws.addRow([new Date(args.dateISO), args.invoiceNo, args.customer, args.debit, args.credit, newBalance]);
 
-  // Styling Baris
   const currencyFmt = '_("Rp"* #,##0_);_("Rp"* (#,##0);_("Rp"* "-"??_);_(@_)';
   row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
     cell.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
@@ -131,7 +130,7 @@ export async function POST(req: Request) {
   try {
     const payload = (await req.json()) as Payload;
 
-    // 1. Validasi
+    // 1. Validasi Input
     if (!payload?.date) return NextResponse.json({ error: "date is required" }, { status: 400 });
     if (!payload?.items?.length) return NextResponse.json({ error: "items required" }, { status: 400 });
 
@@ -152,11 +151,27 @@ export async function POST(req: Request) {
 
     if (!customer) return NextResponse.json({ error: "customer required" }, { status: 400 });
 
-    // 3. Numbering
-    const invCount = await prisma.invoice.count();
-    const sjCount = await prisma.suratJalan.count();
-    const invoiceNo = makeInvoiceNo(String(invCount + 1).padStart(4, "0"), txDate);
-    const sjNo = makeSJNo(String(sjCount + 1), txDate);
+    // 3. LOGIKA NUMBERING (MANUAL vs OTOMATIS)
+    let invoiceNo = payload.invoice_no?.trim();
+    let sjNo = payload.sj_no?.trim();
+
+    // Validasi & Resolve Invoice Number
+    if (invoiceNo) {
+      const existingInv = await prisma.invoice.findUnique({ where: { invoiceNo } });
+      if (existingInv) return NextResponse.json({ error: `Nomor Invoice ${invoiceNo} sudah terdaftar di database.` }, { status: 400 });
+    } else {
+      const invCount = await prisma.invoice.count();
+      invoiceNo = makeInvoiceNo(String(invCount + 1).padStart(4, "0"), txDate);
+    }
+
+    // Validasi & Resolve Surat Jalan Number
+    if (sjNo) {
+      const existingSj = await prisma.suratJalan.findUnique({ where: { sjNo } });
+      if (existingSj) return NextResponse.json({ error: `Nomor SJ ${sjNo} sudah terdaftar di database.` }, { status: 400 });
+    } else {
+      const sjCount = await prisma.suratJalan.count();
+      sjNo = makeSJNo(String(sjCount + 1), txDate);
+    }
 
     // 4. Calculations
     let subtotal = 0;
@@ -202,6 +217,7 @@ export async function POST(req: Request) {
     // 6. Update Ledger (DB & Excel)
     const lastDbLedger = await prisma.accountingLedger.findFirst({ orderBy: { id: "desc" } });
     const newBalanceDb = Number(lastDbLedger?.balance ?? 0) + total;
+    
     await prisma.accountingLedger.create({
       data: {
         date: txDate,
@@ -212,6 +228,7 @@ export async function POST(req: Request) {
         balance: newBalanceDb,
       },
     });
+
     await appendLedgerXlsxRow({
       dateISO: payload.date,
       invoiceNo,
@@ -285,7 +302,9 @@ export async function POST(req: Request) {
     });
 
     ensureDir(PDF_DIR);
-    const pdfPath = path.join(PDF_DIR, `${invoiceNo.replaceAll("/", "_")}.pdf`);
+    const pdfFileName = `${invoiceNo.replaceAll("/", "_")}.pdf`;
+    const pdfPath = path.join(PDF_DIR, pdfFileName);
+
     const browser = await puppeteer.launch({ headless: true, args: ["--no-sandbox"] });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });

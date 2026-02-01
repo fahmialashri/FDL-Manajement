@@ -21,7 +21,6 @@
         print-color-adjust: exact;
       }
 
-      /* Container A4 */
       .page {
         position: relative;
         width: 186mm;
@@ -33,164 +32,166 @@
       .break {
         page-break-after: always;
       }
-
       .bold {
         font-weight: 700;
       }
       .italic {
         font-style: italic;
       }
-      .small {
-        font-size: 10.5pt;
-      }
-      .tiny {
-        font-size: 9.8pt;
-      }
-      .text-center {
-        text-align: center;
-      }
-      .text-right {
-        text-align: right;
-      }
 
       /* =======================================================
-         STYLE HALAMAN 1: INVOICE
+          HALAMAN 1: INVOICE
       ======================================================= */
+      .inv-page {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+      .inv-header-section {
+        position: relative;
+        height: 115mm;
+        flex-shrink: 0;
+      }
       .inv-logo {
         position: absolute;
-        left: 0mm;
-        top: 0mm;
+        left: 0;
+        top: 0;
         height: 25mm;
-        width: auto;
-        object-fit: contain;
       }
-
       .inv-customer {
         position: absolute;
-        left: 0mm;
+        left: 0;
         top: 30mm;
         width: 95mm;
         font-size: 10.5pt;
-        line-height: 1.35;
       }
-      .inv-customer .hdr {
-        font-weight: 700;
-        margin-bottom: 2mm;
-      }
-
       .inv-company {
         position: absolute;
-        right: 0mm;
+        right: 0;
         top: 30mm;
         width: 75mm;
         font-size: 10.5pt;
-        line-height: 1.35;
-        text-align: left;
       }
-
       .inv-left-info {
         position: absolute;
-        left: 0mm;
+        left: 0;
         top: 70mm;
         width: 95mm;
         font-size: 10.5pt;
-        line-height: 1.45;
       }
       .inv-attention {
         position: absolute;
-        right: 0mm;
+        right: 0;
         top: 70mm;
         width: 75mm;
         font-size: 9pt;
-        line-height: 1.45;
         font-style: italic;
       }
-
       .inv-title {
         position: absolute;
-        left: 0mm;
-        top: 112mm;
-        width: 186mm;
+        left: 0;
+        bottom: 0;
+        width: 100%;
         text-align: center;
         font-size: 14pt;
-        font-weight: 400;
       }
-
-      .inv-table-wrap {
-        position: absolute;
-        left: 0mm;
-        top: 122mm;
-        width: 186mm;
+      .inv-middle-section {
+        flex-grow: 1;
+        margin-top: 5mm;
+        display: flex;
       }
       .inv-table {
         width: 100%;
         border-collapse: collapse;
-      }
-      .inv-table th,
-      .inv-table td {
-        border: 0.6px solid #9a9a9a;
-        padding: 6px 8px;
-        vertical-align: top;
-        font-size: 10pt;
+        border: 1px solid #000;
+        table-layout: fixed;
       }
       .inv-table th {
+        border: 1px solid #000;
+        padding: 8px 4px;
         font-weight: 700;
         text-align: center;
+        font-size: 9pt;
       }
-      .inv-row-spacer td {
-        height: 78mm;
+      .inv-table td {
+        border-left: 1px solid #000;
+        border-right: 1px solid #000;
+        padding: 8px 6px;
+        vertical-align: top;
+        font-size: 9.5pt;
+        white-space: nowrap;
       }
-
-      .inv-receive {
-        position: absolute;
-        left: 0mm;
-        top: 224mm;
-        width: 80mm;
-        height: 42mm;
-        border: 0.8px solid #000;
+      .col-nama {
+        width: 32%;
+        white-space: normal !important;
+      }
+      .col-warna {
+        width: 13%;
+        white-space: normal !important;
+      }
+      .col-jumlah {
+        width: 10%;
         text-align: center;
-        padding-top: 4mm;
-        font-size: 10pt;
       }
-
-      /* BAGIAN INI SUDAH DIPERBAIKI (Hapus Filter Hitam) */
+      .col-harga {
+        width: 22%;
+        text-align: right;
+      }
+      .col-subtotal {
+        width: 23%;
+        text-align: right;
+      }
+      .inv-table tr.spacer {
+        height: auto;
+        flex-grow: 1;
+      }
+      .inv-footer-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: stretch;
+        height: 45mm;
+        flex-shrink: 0;
+        margin-top: 5mm;
+      }
+      .inv-receive {
+        width: 85mm;
+        border: 1px solid #000;
+        text-align: center;
+        padding-top: 3mm;
+      }
       .inv-stamp {
-        width: 52mm;
-        height: 22mm;
+        width: 55mm;
+        height: 25mm;
         object-fit: contain;
-        margin-top: 4mm;
-        opacity: 0.95;
-        /* filter: grayscale(1) brightness(0); <--- INI BIANG KEROKNYA, SUDAH DIHAPUS */
+        margin-top: 2mm;
       }
-
       .inv-totals {
-        position: absolute;
-        right: 0mm;
-        top: 232mm;
-        width: 70mm;
-        font-size: 10.5pt;
-        line-height: 1.7;
+        width: 85mm;
+        display: flex;
+        flex-direction: column;
+        padding-top: 3.5mm;
       }
       .inv-totals .row {
         display: flex;
         justify-content: space-between;
-        gap: 8mm;
-      }
-      .inv-totals .lbl {
-        width: 42mm;
-        text-align: left;
+        margin-bottom: 2mm;
+        font-size: 10.5pt;
       }
       .inv-totals .val {
-        width: 28mm;
         text-align: right;
       }
-      .inv-totals .total {
+      .inv-totals .total-row {
+        border-top: 1.5px solid #000;
+        padding-top: 1mm;
         font-weight: 700;
       }
 
       /* =======================================================
-         STYLE HALAMAN 2: SURAT JALAN
+          HALAMAN 2: SURAT JALAN (REVISI MEPET KANAN)
       ======================================================= */
+      .sj-page {
+        display: block;
+      }
       .sj-header {
         display: flex;
         justify-content: space-between;
@@ -200,165 +201,156 @@
       .sj-logo-big {
         height: 25mm;
         object-fit: contain;
-        display: block;
-        margin-bottom: 2mm;
       }
       .sj-title-big {
         font-size: 22pt;
         font-weight: 800;
-        text-transform: uppercase;
       }
 
       .sj-info-grid {
         display: flex;
         justify-content: space-between;
-        margin-bottom: 5mm;
+        align-items: flex-start;
+        margin-bottom: 4mm;
       }
-
       .sj-to {
-        width: 55%;
-      }
-      .sj-meta {
-        width: 40%;
+        width: 50%;
+        line-height: 1.4;
       }
 
-      .sj-meta-row {
+      /* PERBAIKAN UTAMA: Meta info didorong ke kanan */
+      .sj-meta-container {
+        width: 50%;
         display: flex;
-        margin-bottom: 1mm;
+        justify-content: flex-end; /* Mendorong tabel ke paling kanan */
+      }
+      .sj-meta-table {
         font-size: 10.5pt;
+        border-collapse: collapse;
       }
-      .sj-meta-label {
-        width: 38mm;
-        font-weight: normal;
+      .sj-meta-table td {
+        vertical-align: top;
+        padding: 1px 0;
       }
-      .sj-meta-sep {
+      .label-col {
+        width: 35mm;
+        text-align: left;
+      }
+      .sep-col {
         width: 4mm;
+        text-align: center;
       }
-      .sj-meta-val {
-        flex: 1;
+      .val-col {
+        width: 35mm;
+        text-align: left;
       }
 
       .sj-note {
-        margin-bottom: 1mm;
+        margin-top: 5mm;
+        margin-bottom: 0px;
         font-size: 11pt;
-        border-bottom: 1px solid #000;
-        display: inline-block;
-        padding-bottom: 1px;
       }
-
       .sj-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 2mm;
-        font-size: 11pt;
+        margin-top: 0px;
+        margin-bottom: 10mm;
       }
-      .sj-table th {
-        border: 2px solid #000;
-        padding: 8px 4px;
-        text-align: center;
-        font-weight: normal;
-      }
+      .sj-table th,
       .sj-table td {
         border: 2px solid #000;
         padding: 6px;
-        vertical-align: middle;
+      }
+      .sj-table th {
+        text-align: center;
       }
 
       .sj-footer {
-        position: relative;
-        margin-top: 10mm;
         display: flex;
         justify-content: space-between;
-        align-items: flex-end;
+        align-items: stretch;
+        height: 42mm;
       }
-
       .sj-receive-area {
-        margin-bottom: 5mm;
-        text-align: center; /* Tanda Terima RATA TENGAH */
+        width: 60mm;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-align: center;
+        padding: 4mm 0;
       }
-
       .sj-receive-dots {
-        margin-top: 15mm;
         border-bottom: 1px dotted #000;
-        width: 35mm;
-        margin-left: auto; /* Garis RATA TENGAH */
-        margin-right: auto;
+        width: 45mm;
+        margin: 0 auto;
       }
-
       .sj-box-sign {
-        width: 110mm;
+        width: 115mm;
         border-collapse: collapse;
-        border: 2px solid #000;
+        border: 2.5px solid #000;
       }
       .sj-box-sign td {
         border: 2px solid #000;
         text-align: center;
         padding: 4px;
-        font-size: 11pt;
         width: 33.33%;
+        vertical-align: top;
       }
       .sj-box-height {
-        height: 25mm;
+        height: 22mm;
+      }
+      .sj-name-row {
+        vertical-align: bottom !important;
+        font-weight: 700;
       }
     </style>
   </head>
 
   <body>
-    <section class="page break">
-      <img class="inv-logo" src="{{logo_src}}" alt="Logo" />
-
-      <div class="inv-customer">
-        <div class="hdr">CUSTOMER</div>
-        <div class="bold">{{customer_name}}</div>
-        <div>{{customer_address}}</div>
-      </div>
-
-      <div class="inv-company">
-        <div class="bold">{{company_name}}</div>
-        <div>{{company_address}}</div>
-        <div>Telepon: {{company_phone}}</div>
-        <div>NPWP : {{company_npwp}}</div>
-      </div>
-
-      <div class="inv-left-info small">
-        <div>Tanggal: {{invoice_date}}</div>
-        <div><span class="bold">Jatuh tempo:</span> {{due_date}}</div>
-        <div>NO. Invoice: {{invoice_no}}</div>
-        <div>{{shipping_note}}</div>
-        <div>{{vat_note}}</div>
-      </div>
-
-      <div class="inv-attention tiny">
-        <div class="bold italic">Perhatian :</div>
-        <div>
-          -Penerima Harap Memeriksa Kelengkapan Barang. Kami tidak dapat
-          melayani komplain setelah barang di terima
+    <section class="page inv-page break">
+      <div class="inv-header-section">
+        <img class="inv-logo" src="{{logo_src}}" alt="Logo" />
+        <div class="inv-customer">
+          <div class="bold">CUSTOMER</div>
+          <div class="bold">{{customer_name}}</div>
+          <div>{{customer_address}}</div>
         </div>
-        <div>
-          -Pembayaran dengan Transfer/Giro/ Cek Hanya dapat ditransfer ke
-          rekening yang tercantum :
+        <div class="inv-company">
+          <div class="bold">{{company_name}}</div>
+          <div>{{company_address}}</div>
+          <div>Telepon: {{company_phone}}</div>
+          <div>NPWP : {{company_npwp}}</div>
         </div>
-        <div>
-          Bank : Bank Central Asia (BCA) – {{bank_account}} - {{bank_name}}
+        <div class="inv-left-info small">
+          <div>Tanggal: {{invoice_date}}</div>
+          <div><span class="bold">Jatuh tempo:</span> {{due_date}}</div>
+          <div>NO. Invoice: {{invoice_no}}</div>
+          <div>{{shipping_note}}</div>
+          <div>{{vat_note}}</div>
         </div>
+        <div class="inv-attention tiny">
+          <div class="bold italic">Perhatian :</div>
+          <div>-Penerima Harap Memeriksa Kelengkapan Barang.</div>
+          <div>
+            -Pembayaran Transfer ke: BCA – {{bank_account}} - {{bank_name}}
+          </div>
+        </div>
+        <div class="inv-title">Invoice</div>
       </div>
-
-      <div class="inv-title">Invoice</div>
-
-      <div class="inv-table-wrap">
+      <div class="inv-middle-section">
         <table class="inv-table">
           <thead>
             <tr>
-              <th style="width: 36%">NAMA BARANG</th>
-              <th style="width: 12%">WARNA</th>
-              <th style="width: 14%">JUMLAH</th>
-              <th style="width: 16%">HARGA SATUAN</th>
-              <th style="width: 22%">SUBTOTAL</th>
+              <th class="col-nama">NAMA BARANG</th>
+              <th class="col-warna">WARNA</th>
+              <th class="col-jumlah">JUMLAH</th>
+              <th class="col-harga">HARGA SATUAN</th>
+              <th class="col-subtotal">SUBTOTAL</th>
             </tr>
           </thead>
           <tbody>
             {{items_rows}}
-            <tr class="inv-row-spacer">
+            <tr class="spacer">
               <td></td>
               <td></td>
               <td></td>
@@ -368,37 +360,37 @@
           </tbody>
         </table>
       </div>
-
-      <div class="inv-receive">
-        <div class="italic">Di Terima Customer</div>
-        <img class="inv-stamp" src="{{stamp_src}}" alt="Stamp" />
-      </div>
-
-      <div class="inv-totals">
-        <div class="row">
-          <div class="lbl">SUB TOTAL</div>
-          <div class="val">{{subtotal_fmt_plain}}</div>
+      <div class="inv-footer-section">
+        <div class="inv-receive">
+          <div class="italic">Di Terima Customer</div>
+          <img class="inv-stamp" src="{{stamp_src}}" alt="Stamp" />
         </div>
-        <div class="row">
-          <div class="lbl">DPP Nilai Lain</div>
-          <div class="val">{{dpp_fmt_plain}}</div>
-        </div>
-        <div class="row">
-          <div class="lbl">PPN (11%)</div>
-          <div class="val">{{ppn_fmt_plain}}</div>
-        </div>
-        <div class="row total">
-          <div class="lbl">Total</div>
-          <div class="val">{{total_fmt_plain}}</div>
+        <div class="inv-totals">
+          <div class="row">
+            <div class="lbl">SUB TOTAL</div>
+            <div class="val">{{subtotal_fmt_plain}}</div>
+          </div>
+          <div class="row">
+            <div class="lbl">DPP Nilai Lain</div>
+            <div class="val">{{dpp_fmt_plain}}</div>
+          </div>
+          <div class="row">
+            <div class="lbl">PPN (11%)</div>
+            <div class="val">{{ppn_fmt_plain}}</div>
+          </div>
+          <div class="row total-row">
+            <div class="lbl">Total</div>
+            <div class="val">{{total_fmt_plain}}</div>
+          </div>
         </div>
       </div>
     </section>
 
-    <section class="page">
+    <section class="page sj-page">
       <div class="sj-header">
         <div>
           <img src="{{logo_src}}" class="sj-logo-big" alt="Logo" />
-          <div class="bold">{{company_name}}</div>
+          <div class="bold" style="margin-top: 2mm">{{company_name}}</div>
         </div>
         <div class="sj-title-big">SURAT JALAN</div>
       </div>
@@ -410,37 +402,39 @@
           <div>{{customer_address}}</div>
         </div>
 
-        <div class="sj-meta">
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">Nomor Surat Jalan</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{sj_no}}</div>
-          </div>
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">Tanggal</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{sj_date_pretty}}</div>
-          </div>
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">Nomor PO</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{po_number}}</div>
-          </div>
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">Dikirim dengan</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{transport_method}}</div>
-          </div>
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">No. Polisi</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{plate_number}}</div>
-          </div>
-          <div class="sj-meta-row">
-            <div class="sj-meta-label">Nama Pengemudi</div>
-            <div class="sj-meta-sep">:</div>
-            <div class="sj-meta-val">{{driver_name}}</div>
-          </div>
+        <div class="sj-meta-container">
+          <table class="sj-meta-table">
+            <tr>
+              <td class="label-col">Nomor Surat Jalan</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{sj_no}}</td>
+            </tr>
+            <tr>
+              <td class="label-col">Tanggal</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{sj_date_pretty}}</td>
+            </tr>
+            <tr>
+              <td class="label-col">Nomor PO</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{po_number}}</td>
+            </tr>
+            <tr>
+              <td class="label-col">Dikirim dengan</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{transport_method}}</td>
+            </tr>
+            <tr>
+              <td class="label-col">No. Polisi</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{plate_number}}</td>
+            </tr>
+            <tr>
+              <td class="label-col">Nama Pengemudi</td>
+              <td class="sep-col">:</td>
+              <td class="val-col">{{driver_name}}</td>
+            </tr>
+          </table>
         </div>
       </div>
 
@@ -455,44 +449,12 @@
             <th style="width: 15%">Kode Barang</th>
             <th style="width: 35%">Nama Barang</th>
             <th style="width: 10%">Satuan</th>
-            <th style="width: 15%">Jumlah Barang</th>
-            <th style="width: 20%">Keterangan</th>
+            <th style="width: 15%">Jumlah</th>
+            <th style="width: 20%">Ket.</th>
           </tr>
         </thead>
         <tbody>
           {{sj_items_rows}}
-          <tr>
-            <td>&nbsp;</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
-          <tr>
-            <td>&nbsp;</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-          </tr>
           <tr>
             <td>&nbsp;</td>
             <td></td>
@@ -506,22 +468,21 @@
 
       <div class="sj-footer">
         <div class="sj-receive-area">
-          <div style="font-size: 11pt">Tanda Terima,</div>
+          <div class="bold">Tanda Terima,</div>
           <div class="sj-receive-dots"></div>
         </div>
-
         <table class="sj-box-sign">
           <tr>
-            <td>Sopir,</td>
-            <td>Bagian Packing</td>
-            <td>Manager,</td>
+            <td class="bold">Sopir,</td>
+            <td class="bold">Bagian Packing</td>
+            <td class="bold">Manager,</td>
           </tr>
           <tr class="sj-box-height">
             <td></td>
             <td></td>
             <td></td>
           </tr>
-          <tr>
+          <tr class="sj-name-row">
             <td>{{sopir_name}}</td>
             <td>{{packing_name}}</td>
             <td>{{manager_name}}</td>
