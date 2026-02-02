@@ -19,7 +19,8 @@ import { supabaseAdmin } from "@/libs/supabaseAdmin";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const CHROMIUM_PACK_URL = "https://github.com/sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar";
+// Gunakan x64 karena Vercel menggunakan arsitektur ini
+const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v143.0.4/chromium-v143.0.4-pack.x64.tar";
 
 type Payload = {
   date: string;
@@ -342,13 +343,13 @@ export async function POST(req: Request) {
 
     const browser = await puppeteer.launch({
   args: chromium.args,
-  // Hapus chromium.defaultViewport karena tidak ada di tipe datanya
+  // Wajib diisi manual di v143
   defaultViewport: {
     width: 1920,
-    height: 1080,
+    height: 1080
   },
   executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
-  // Ganti chromium.headless menjadi string "shell" (rekomendasi terbaru) atau true
+  // Gunakan 'shell' untuk stabilitas terbaik di v143
   headless: "shell" as any, 
 });
 
