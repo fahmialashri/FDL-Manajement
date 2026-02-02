@@ -35,6 +35,7 @@ type Payload = {
     transport_method: "Motor" | "Car";
   };
   items: Array<{
+    code: string; // 👈 Tambahkan Kode Barang di tipe data
     name: string;
     color: string;
     unit: string;
@@ -77,7 +78,7 @@ async function buildLedgerWorkbookBuffer() {
     { header: "NO. INVOICE", key: "referenceNo", width: 25 },
     { header: "DESKRIPSI", key: "description", width: 35 },
     { header: "TYPE", key: "type", width: 12 },
-    { header: "AMOUNT", key: "amount", width: 20 },
+    { header: "MASUK (DR)", key: "amount", width: 20 },
     { header: "SALDO", key: "balance", width: 20 },
   ];
   const headerRow = ws.getRow(1);
@@ -152,7 +153,16 @@ export async function POST(req: Request) {
         data: {
           invoiceNo, date: txDate, customerId: customer.id, subtotal, dppAmount: dpp, ppnAmount: ppn, grandTotal: total,
           status: "UNPAID",
-          items: { create: itemsDetailed.map((it) => ({ productName: it.name, unit: it.unit, qty: it.qty, color: it.color || "", unitPrice: it.unit_price, subtotal: it.line })) },
+          items: { 
+            create: itemsDetailed.map((it) => ({ 
+              productName: `[${it.code}] ${it.name}`, // 👈 Kode Barang masuk ke nama barang di DB
+              unit: it.unit, 
+              qty: it.qty, 
+              color: it.color || "", 
+              unitPrice: it.unit_price, 
+              subtotal: it.line 
+            })) 
+          },
           suratJalan: { create: { sjNo, driverName: payload.logistics.driver_name, plateNumber: payload.logistics.plate_number || "-", transportMethod: payload.logistics.transport_method === "Car" ? "Mobil" : "Motor" } },
         },
       });
@@ -175,12 +185,26 @@ export async function POST(req: Request) {
     const stampBase64 = fs.existsSync(stampPath) ? `data:image/png;base64,${fs.readFileSync(stampPath).toString("base64")}` : logoBase64;
     const template = fs.readFileSync(templatePath, "utf-8");
 
+    // --- PERBAIKAN TABEL PDF (TAMBAH KODE BARANG) ---
     const itemsRows = dbResult.itemsDetailed.map((it) => `
-      <tr><td>${it.name}</td><td style="text-align:center">${it.color || "-"}</td><td style="text-align:center">${it.qty}</td><td style="text-align:right">${formatRupiah(it.unit_price)}</td><td style="text-align:right">${formatRupiah(it.line)}</td></tr>
+      <tr>
+        <td style="font-size: 10px;"><b>${it.code}</b><br/>${it.name}</td>
+        <td style="text-align:center">${it.color || "-"}</td>
+        <td style="text-align:center">${it.qty} ${it.unit}</td>
+        <td style="text-align:right">${formatRupiah(it.unit_price)}</td>
+        <td style="text-align:right">${formatRupiah(it.line)}</td>
+      </tr>
     `).join("");
 
     const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
-      <tr><td style="text-align:center">${idx + 1}</td><td style="text-align:center">${it.color || "-"}</td><td>${it.name}</td><td style="text-align:center">${it.unit}</td><td style="text-align:center">${it.qty}</td><td style="text-align:center">Cat Khusus</td></tr>
+      <tr>
+        <td style="text-align:center">${idx + 1}</td>
+        <td style="text-align:center"><b>${it.code}</b></td>
+        <td>${it.name}</td>
+        <td style="text-align:center">${it.color || "-"}</td>
+        <td style="text-align:center">${it.qty}</td>
+        <td style="text-align:center">${it.unit}</td>
+      </tr>
     `).join("");
 
     const html = replaceAll(template, {

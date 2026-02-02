@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   Printer,
   X,
+  Barcode,
   Hash
 } from "lucide-react";
 
@@ -29,6 +30,7 @@ type Customer = {
 };
 
 type ItemRow = {
+  code: string;
   name: string;
   color: string;
   unit: string;
@@ -68,7 +70,7 @@ export default function NewTransactionForm({
   const [transportMethod, setTransportMethod] = useState<"Motor" | "Car">("Motor");
 
   const [items, setItems] = useState<ItemRow[]>([
-    { name: "", color: "", unit: "KG", qty: 1, unit_price: 0 },
+    { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 },
   ]);
 
   useEffect(() => {
@@ -86,10 +88,11 @@ export default function NewTransactionForm({
   const tax = useMemo(() => calcTaxInclusive(subtotal), [subtotal]);
 
   function addRow() {
-    setItems((prev) => [...prev, { name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
+    setItems((prev) => [...prev, { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
   }
 
   function removeRow(i: number) {
+    if (items.length <= 1) return;
     setItems((prev) => prev.filter((_, idx) => idx !== i));
   }
 
@@ -116,9 +119,10 @@ export default function NewTransactionForm({
         transport_method: transportMethod,
       },
       items: items.map((it) => ({
+        code: it.code.toUpperCase(),
         name: it.name,
         color: it.color,
-        unit: it.unit,
+        unit: it.unit.toUpperCase(),
         qty: it.qty,
         unit_price: it.unit_price,
       })),
@@ -142,8 +146,9 @@ export default function NewTransactionForm({
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Gagal menyimpan transaksi");
+      
       setToast({ show: true, type: 'success', message: 'Transaksi Berhasil Disimpan!', invoiceNo: data.invoice_no });
-      setItems([{ name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
+      setItems([{ code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
       setPoNumber("");
       setInvoiceNumber("");
       setSjNumber("");
@@ -164,7 +169,7 @@ export default function NewTransactionForm({
     <div className="bg-slate-50 min-h-screen pb-24 md:pb-10 relative">
       {/* TOAST NOTIF */}
       {toast.show && (
-        <div className="fixed top-5 right-5 z-50 animate-in slide-in-from-right fade-in duration-300">
+        <div className="fixed top-5 right-5 z-[100] animate-in slide-in-from-right fade-in duration-300">
           <div className={`bg-white rounded-2xl shadow-2xl border-l-8 p-5 md:w-96 flex flex-col gap-4 ${toast.type === 'success' ? 'border-green-500' : 'border-red-500'}`}>
              <div className="flex items-start justify-between">
                 <div className="flex gap-3">
@@ -221,7 +226,7 @@ export default function NewTransactionForm({
              </div>
           </div>
 
-          {/* DATA LOGISTICS & NO MANUAL */}
+          {/* DATA LOGISTICS */}
           <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100">
              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4 pb-2 border-b border-slate-50"><Truck className="text-orange-500" size={20} /> Pengiriman & No. Dokumen</h2>
              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -232,12 +237,12 @@ export default function NewTransactionForm({
 
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                    <div>
-                     <label className="text-[10px] font-bold text-blue-600 uppercase mb-1 block">No. Invoice Manual</label>
-                     <input placeholder="Otomatis" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)}/>
+                     <label className="text-[10px] font-bold text-blue-600 uppercase mb-1 block tracking-wider">No. Invoice Manual</label>
+                     <input placeholder="Otomatis" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)}/>
                    </div>
                    <div>
-                     <label className="text-[10px] font-bold text-blue-600 uppercase mb-1 block">No. SJ Manual</label>
-                     <input placeholder="Otomatis" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={sjNumber} onChange={(e) => setSjNumber(e.target.value)}/>
+                     <label className="text-[10px] font-bold text-blue-600 uppercase mb-1 block tracking-wider">No. SJ Manual</label>
+                     <input placeholder="Otomatis" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={sjNumber} onChange={(e) => setSjNumber(e.target.value)}/>
                    </div>
                 </div>
 
@@ -247,7 +252,7 @@ export default function NewTransactionForm({
                 <div className="md:col-span-2">
                    <div className="flex gap-2">
                       {['Motor', 'Car'].map((type) => (
-                        <button key={type} onClick={() => setTransportMethod(type as any)} className={`flex-1 p-3 rounded-xl border font-bold text-sm transition-all ${transportMethod === type ? 'bg-blue-100 border-blue-500 text-blue-700' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>
+                        <button key={type} onClick={() => setTransportMethod(type as any)} className={`flex-1 p-3 rounded-xl border font-bold text-sm transition-all ${transportMethod === type ? 'bg-blue-100 border-blue-500 text-blue-700 shadow-inner' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>
                           {type === "Car" ? "Mobil" : "Motor"}
                         </button>
                       ))}
@@ -261,27 +266,69 @@ export default function NewTransactionForm({
         <div className="bg-white p-5 md:p-6 rounded-3xl shadow-sm border border-slate-100">
            <div className="flex justify-between items-center mb-6">
              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2"><Package className="text-purple-500" size={20} /> Item Barang</h2>
-             <button onClick={addRow} className="bg-black hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md"><Plus size={16} /> Tambah</button>
+             <button onClick={addRow} className="bg-slate-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95 shadow-md"><Plus size={18} /> Tambah Item</button>
            </div>
+           
            <div className="space-y-4">
              {items.map((row, i) => (
-               <div key={i} className="group bg-slate-50 p-4 rounded-2xl border border-slate-200 transition-all hover:border-blue-300">
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-start">
-                     <div className="md:col-span-4"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Barang</label><input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.name} onChange={(e) => setRow(i, { name: e.target.value })}/></div>
-                     <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Warna</label><input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.color} onChange={(e) => setRow(i, { color: e.target.value })}/></div>
-                     <div className="md:col-span-3 grid grid-cols-2 gap-2">
-                        <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Satuan</label><input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.unit} onChange={(e) => setRow(i, { unit: e.target.value })}/></div>
-                        <div><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Qty</label><input type="number" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.qty} onChange={(e) => setRow(i, { qty: Number(e.target.value) })}/></div>
-                     </div>
-                     <div className="md:col-span-3 flex gap-2">
-                        <div className="flex-1"><label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Harga</label><input type="number" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.unit_price} onChange={(e) => setRow(i, { unit_price: Number(e.target.value) })}/></div>
-                        <div className="flex flex-col justify-end"><button onClick={() => removeRow(i)} className="p-3 text-red-500 bg-white border border-red-100 rounded-xl w-full flex justify-center hover:bg-red-50 active:scale-90 transition-all shadow-sm"><Trash2 size={18} /></button></div>
-                     </div>
+               <div key={i} className="group bg-slate-50 p-4 md:p-5 rounded-2xl border border-slate-200 transition-all hover:border-blue-300 hover:shadow-md">
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+                      
+                      {/* KODE BARANG */}
+                      <div className="md:col-span-2">
+                        <label className="text-[10px] font-bold text-blue-600 uppercase mb-1 flex items-center gap-1"><Barcode size={12}/> Kode</label>
+                        <input 
+                          placeholder="KD-01" 
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all uppercase" 
+                          value={row.code} 
+                          onChange={(e) => setRow(i, { code: e.target.value })}
+                        />
+                      </div>
+
+                      {/* NAMA BARANG */}
+                      <div className="md:col-span-3">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Nama Barang</label>
+                        <input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.name} onChange={(e) => setRow(i, { name: e.target.value })}/>
+                      </div>
+
+                      {/* WARNA */}
+                      <div className="md:col-span-2">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Warna</label>
+                        <input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.color} onChange={(e) => setRow(i, { color: e.target.value })}/>
+                      </div>
+
+                      {/* SATUAN & QTY */}
+                      <div className="md:col-span-2 grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Unit</label>
+                          <input className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all uppercase" value={row.unit} onChange={(e) => setRow(i, { unit: e.target.value })}/>
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Qty</label>
+                          <input type="number" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm text-center font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.qty} onChange={(e) => setRow(i, { qty: Number(e.target.value) })}/>
+                        </div>
+                      </div>
+
+                      {/* HARGA & DELETE */}
+                      <div className="md:col-span-3 flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Harga Satuan</label>
+                          <input type="number" className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={row.unit_price} onChange={(e) => setRow(i, { unit_price: Number(e.target.value) })}/>
+                        </div>
+                        <div className="flex flex-col justify-end">
+                          <button onClick={() => removeRow(i)} className="p-3 text-red-500 bg-white border border-red-100 rounded-xl hover:bg-red-50 active:scale-90 transition-all shadow-sm">
+                            <Trash2 size={20} />
+                          </button>
+                        </div>
+                      </div>
                   </div>
-                  {/* --- SUB TOTAL ITEM (DAPATKAN LAGI) --- */}
-                  <div className="mt-2 pt-2 border-t border-slate-200/50 flex justify-between md:justify-end md:gap-2 text-xs font-medium text-slate-500">
-                    <span>Subtotal Item:</span>
-                    <span className="font-bold text-slate-800">{formatRupiah(Number(row.qty) * Number(row.unit_price))}</span>
+                  
+                  {/* SUB TOTAL PER ITEM */}
+                  <div className="mt-3 pt-2 border-t border-slate-200/50 flex justify-between items-center text-xs">
+                    <span className="text-slate-400 font-medium">Subtotal Item:</span>
+                    <span className="font-bold text-slate-900 bg-slate-200/50 px-2 py-1 rounded-lg">
+                      {formatRupiah(Number(row.qty) * Number(row.unit_price))}
+                    </span>
                   </div>
                </div>
              ))}
@@ -289,18 +336,50 @@ export default function NewTransactionForm({
         </div>
 
         {/* SUMMARY & SUBMIT */}
-        <div className="bg-white p-5 md:p-6 rounded-3xl shadow-lg border border-slate-100 flex flex-col md:flex-row gap-6 md:items-center">
-           <div className="hidden md:block flex-1 text-sm text-slate-500 bg-slate-50 p-4 rounded-2xl border border-slate-100">
-             <p className="font-bold text-slate-700 mb-1">ℹ️ Kalkulasi Otomatis</p>
-             <p>Sistem akan memecah harga input menjadi <span className="text-orange-600 font-bold">DPP + PPN 11%</span> secara otomatis.</p>
+        <div className="bg-white p-6 rounded-3xl shadow-xl border border-slate-100 flex flex-col md:flex-row gap-6 md:items-center mb-10">
+           <div className="hidden md:block flex-1 text-sm text-slate-500 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+             <div className="flex items-center gap-2 font-bold text-slate-700 mb-2">
+               <span className="text-xl">ℹ️</span> Kalkulasi Otomatis
+             </div>
+             <p className="leading-relaxed">
+               Sistem akan secara otomatis menghitung nilai <span className="text-blue-600 font-bold">DPP</span> dan <span className="text-orange-600 font-bold">PPN 11%</span> dari Grand Total yang Anda masukkan. 
+               Pastikan harga satuan yang Anda input adalah harga <b>Termasuk Pajak</b>.
+             </p>
            </div>
-           <div className="w-full md:w-96 space-y-3">
-             <div className="flex justify-between text-sm text-slate-500"><span>Total Barang</span><span className="font-medium">{items.length} Item</span></div>
-             <div className="flex justify-between text-sm text-slate-500"><span>DPP (Dasar Pengenaan)</span><span className="font-medium">{formatRupiah(tax.dpp)}</span></div>
-             <div className="flex justify-between text-sm text-orange-600"><span>PPN (11%)</span><span className="font-medium">{formatRupiah(tax.ppn)}</span></div>
-             <div className="border-t border-slate-200 pt-3 flex justify-between items-center"><span className="text-lg font-bold text-slate-800">Grand Total</span><span className="text-2xl font-black text-blue-800">{formatRupiah(tax.total)}</span></div>
-             <button type="button" onClick={submit} disabled={isLoading} className={`w-full mt-2 py-4 rounded-xl font-bold text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${isLoading ? 'bg-slate-300 text-slate-500' : 'bg-yellow-400 hover:bg-yellow-500 text-blue-900 shadow-yellow-200'}`}>
-               {isLoading ? <><Loader2 className="animate-spin" size={24} /> Memproses...</> : <><Save size={24} /> Simpan Transaksi</>}
+           
+           <div className="w-full md:w-96 space-y-4">
+             <div className="flex justify-between text-sm text-slate-500 font-medium">
+               <span>Jumlah Item</span>
+               <span className="text-slate-800 font-bold">{items.length} Barang</span>
+             </div>
+             <div className="flex justify-between text-sm text-slate-500 font-medium">
+               <span>DPP (Dasar Pengenaan)</span>
+               <span className="text-slate-800">{formatRupiah(tax.dpp)}</span>
+             </div>
+             <div className="flex justify-between text-sm text-orange-600 font-bold">
+               <span>PPN (11%)</span>
+               <span>{formatRupiah(tax.ppn)}</span>
+             </div>
+             <div className="border-t-2 border-dashed border-slate-100 pt-4 flex justify-between items-center">
+               <span className="text-lg font-bold text-slate-800">Grand Total</span>
+               <span className="text-2xl font-black text-blue-800 tracking-tight">{formatRupiah(tax.total)}</span>
+             </div>
+             
+             <button 
+               type="button" 
+               onClick={submit} 
+               disabled={isLoading} 
+               className={`w-full py-4 rounded-2xl font-black text-lg shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 ${
+                 isLoading 
+                 ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
+                 : 'bg-yellow-400 hover:bg-yellow-500 text-blue-900 shadow-yellow-100'
+               }`}
+             >
+               {isLoading ? (
+                 <><Loader2 className="animate-spin" size={24} /> Memproses...</>
+               ) : (
+                 <><Save size={24} /> Simpan Transaksi</>
+               )}
              </button>
            </div>
         </div>
