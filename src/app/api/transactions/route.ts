@@ -184,7 +184,7 @@ export async function POST(req: Request) {
     const stampBase64 = fs.existsSync(stampPath) ? `data:image/png;base64,${fs.readFileSync(stampPath).toString("base64")}` : logoBase64;
     const template = fs.readFileSync(templatePath, "utf-8");
 
-    // --- 1. TABEL INVOICE (PAKAI vertical-align: top) ---
+    // --- 1. TABEL INVOICE (Tetap 5 Kolom) ---
     const itemsRows = dbResult.itemsDetailed.map((it) => `
       <tr>
         <td style="padding: 5px; vertical-align: top; text-align: left;">
@@ -197,18 +197,18 @@ export async function POST(req: Request) {
       </tr>
     `).join("");
 
-    // --- 2. TABEL SURAT JALAN (SESUAI URUTAN KOLOM DI GAMBAR) ---
-    // Urutan: No | Kode Barang | Nama Barang | Satuan | Jumlah | Ket.
+    // --- 2. TABEL SURAT JALAN (FIX 6 KOLOM SESUAI INSTRUKSI) ---
+    // No | Kode | Nama (+Warna) | Satuan | Jumlah | Keterangan
     const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
       <tr>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${idx + 1}</td>
         <td style="text-align:center; vertical-align: top; padding: 5px;"><b>${it.code}</b></td>
         <td style="vertical-align: top; padding: 5px; text-align: left;">
-          <b>${it.name}</b>
+          <b>${it.name}</b> ${it.color ? `<br/><small>Warna: ${it.color}</small>` : ""}
         </td>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${it.unit}</td>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${it.qty}</td>
-        <td style="text-align:center; vertical-align: top; padding: 5px; font-weight: bold;">
+        <td style="text-align:center; vertical-align: top; padding: 5px;">
           ${it.description || "-"}
         </td>
       </tr>
