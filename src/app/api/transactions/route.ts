@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import ExcelJS from "exceljs";
 
 import { prisma } from "@/prisma-client";
@@ -15,7 +16,8 @@ import { calcTaxInclusive } from "@/libs/tax";
 import { replaceAll } from "@/libs/html";
 import { supabaseAdmin } from "@/libs/supabaseAdmin";
 
-// --- TYPE DEFINITIONS ---
+export const runtime = "nodejs";
+
 type Payload = {
   date: string;
   invoice_no?: string;
@@ -37,7 +39,6 @@ type Payload = {
   }>;
 };
 
-// bucket Supabase Storage
 const BUCKET = "accounting";
 
 function formatIdPlain(n: number) {
@@ -47,9 +48,6 @@ function formatIdPlain(n: number) {
   });
 }
 
-// ======================================================
-// Upload helper (Supabase Storage)
-// ======================================================
 async function uploadToStorage(params: {
   bucket: string;
   storagePath: string;
@@ -63,11 +61,8 @@ async function uploadToStorage(params: {
       upsert: true,
     });
 
-  if (error) {
-    throw new Error(`Storage upload failed: ${error.message}`);
-  }
+  if (error) throw new Error(`Storage upload failed: ${error.message}`);
 
-  // kalau bucket kamu public, ini langsung bisa diakses
   const { data } = supabaseAdmin.storage
     .from(params.bucket)
     .getPublicUrl(params.storagePath);
@@ -75,9 +70,6 @@ async function uploadToStorage(params: {
   return data.publicUrl;
 }
 
-// ======================================================
-// Build Ledger Excel dari DB (buffer)
-// ======================================================
 async function buildLedgerWorkbookBuffer() {
   const rows = await prisma.accountingLedger.findMany({
     orderBy: { id: "asc" },
@@ -95,7 +87,6 @@ async function buildLedgerWorkbookBuffer() {
     { header: "SALDO", key: "balance", width: 20 },
   ];
 
-  // style header
   const headerRow = ws.getRow(1);
   headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
   headerRow.fill = {
@@ -136,11 +127,9 @@ async function buildLedgerWorkbookBuffer() {
         cell.numFmt = "dd/mm/yyyy";
         cell.alignment = { vertical: "middle", horizontal: "center" };
       }
-
       if (colNumber === 2) {
         cell.alignment = { vertical: "middle", horizontal: "center" };
       }
-
       if (colNumber >= 5) {
         cell.numFmt = currencyFmt;
         cell.alignment = { vertical: "middle", horizontal: "right" };
@@ -148,17 +137,14 @@ async function buildLedgerWorkbookBuffer() {
     });
   });
 
-  return Buffer.from(await wb.xlsx.writeBuffer());
+  const arrayBuffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer as any);
 }
 
-// ======================================================
-// MAIN API HANDLER (POST)
-// ======================================================
 export async function POST(req: Request) {
   try {
     const payload = (await req.json()) as Payload;
 
-    // 1. Validasi Input
     if (!payload?.date)
       return NextResponse.json({ error: "date is required" }, { status: 400 });
     if (!payload?.items?.length)
@@ -166,7 +152,6 @@ export async function POST(req: Request) {
 
     const txDate = new Date(payload.date);
 
-    // 2. Resolve Customer
     const customer = payload.customer_id
       ? await prisma.customer.findUnique({ where: { id: payload.customer_id } })
       : payload.customer_new
@@ -185,11 +170,9 @@ export async function POST(req: Request) {
         { status: 400 }
       );
 
-    // 3. LOGIKA NUMBERING (MANUAL vs OTOMATIS)
     let invoiceNo = payload.invoice_no?.trim();
     let sjNo = payload.sj_no?.trim();
 
-    // Validasi & Resolve Invoice Number
     if (invoiceNo) {
       const existingInv = await prisma.invoice.findUnique({
         where: { invoiceNo },
@@ -204,7 +187,6 @@ export async function POST(req: Request) {
       invoiceNo = makeInvoiceNo(String(invCount + 1).padStart(4, "0"), txDate);
     }
 
-    // Validasi & Resolve Surat Jalan Number
     if (sjNo) {
       const existingSj = await prisma.suratJalan.findUnique({
         where: { sjNo },
@@ -219,7 +201,6 @@ export async function POST(req: Request) {
       sjNo = makeSJNo(String(sjCount + 1), txDate);
     }
 
-    // 4. Calculations
     let subtotal = 0;
     const itemsDetailed = payload.items.map((it) => {
       const line = Number(it.qty) * Number(it.unit_price);
@@ -229,7 +210,6 @@ export async function POST(req: Request) {
 
     const { dpp, ppn, total } = calcTaxInclusive(subtotal);
 
-    // 5. DB Save (Invoice & SJ)
     const createdInvoice = await prisma.invoice.create({
       data: {
         invoiceNo,
@@ -262,7 +242,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // 6. Update Ledger (DB)
     const lastDbLedger = await prisma.accountingLedger.findFirst({
       orderBy: { id: "desc" },
     });
@@ -280,9 +259,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // ======================================================
-    // 7. Generate PDF (BUFFER)
-    // ======================================================
+    // ====== PDF buffer ======
     const logoPath = path.join(process.cwd(), "public", "logo.png");
     const stampPath = path.join(process.cwd(), "public", "inv-stamp.png");
     const templatePath = path.join(process.cwd(), "templates", "invoice_sj.html");
@@ -361,9 +338,11 @@ export async function POST(req: Request) {
     });
 
     const browser = await puppeteer.launch({
-      headless: true,
-      args: ["--no-sandbox"],
-    });
+  args: chromium.args,
+  executablePath: await chromium.executablePath(),
+  headless: true,
+});
+
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
@@ -374,9 +353,7 @@ export async function POST(req: Request) {
 
     await browser.close();
 
-    // ======================================================
-    // 8. Upload PDF ke Supabase Storage
-    // ======================================================
+    // ====== Upload PDF ======
     const safeInvoice = invoiceNo.replaceAll("/", "_");
     const pdfStoragePath = `pdf/${safeInvoice}.pdf`;
 
@@ -387,11 +364,8 @@ export async function POST(req: Request) {
       contentType: "application/pdf",
     });
 
-    // ======================================================
-    // 9. Generate Ledger Excel dari DB & upload
-    // ======================================================
+    // ====== Upload Ledger Excel ======
     const ledgerBuffer = await buildLedgerWorkbookBuffer();
-
     const ledgerStoragePath = `excel/Accounting_Ledger.xlsx`;
 
     const ledgerUrl = await uploadToStorage({
