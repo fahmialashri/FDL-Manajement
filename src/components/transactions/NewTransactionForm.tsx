@@ -19,7 +19,8 @@ import {
   Printer,
   X,
   Barcode,
-  Hash
+  Hash,
+  MessageSquare // Icon untuk keterangan
 } from "lucide-react";
 
 type Customer = {
@@ -36,6 +37,7 @@ type ItemRow = {
   unit: string;
   qty: number;
   unit_price: number;
+  description: string; // Tambahkan ini
 };
 
 export default function NewTransactionForm({
@@ -70,7 +72,7 @@ export default function NewTransactionForm({
   const [transportMethod, setTransportMethod] = useState<"Motor" | "Car">("Motor");
 
   const [items, setItems] = useState<ItemRow[]>([
-    { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 },
+    { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0, description: "" },
   ]);
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export default function NewTransactionForm({
   const tax = useMemo(() => calcTaxInclusive(subtotal), [subtotal]);
 
   function addRow() {
-    setItems((prev) => [...prev, { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
+    setItems((prev) => [...prev, { code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0, description: "" }]);
   }
 
   function removeRow(i: number) {
@@ -125,6 +127,7 @@ export default function NewTransactionForm({
         unit: it.unit.toUpperCase(),
         qty: it.qty,
         unit_price: it.unit_price,
+        description: it.description, // Kirim ke API
       })),
     };
 
@@ -148,7 +151,7 @@ export default function NewTransactionForm({
       if (!res.ok) throw new Error(data?.error || "Gagal menyimpan transaksi");
       
       setToast({ show: true, type: 'success', message: 'Transaksi Berhasil Disimpan!', invoiceNo: data.invoice_no });
-      setItems([{ code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0 }]);
+      setItems([{ code: "", name: "", color: "", unit: "KG", qty: 1, unit_price: 0, description: "" }]);
       setPoNumber("");
       setInvoiceNumber("");
       setSjNumber("");
@@ -166,7 +169,7 @@ export default function NewTransactionForm({
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-24 md:pb-10 relative">
+    <div className="bg-slate-50 min-h-screen pb-24 md:pb-10 relative text-slate-900">
       {/* TOAST NOTIF */}
       {toast.show && (
         <div className="fixed top-5 right-5 z-[100] animate-in slide-in-from-right fade-in duration-300">
@@ -320,6 +323,17 @@ export default function NewTransactionForm({
                             <Trash2 size={20} />
                           </button>
                         </div>
+                      </div>
+
+                      {/* KOLOM KETERANGAN BARANG (FULL ROW ON MOBILE, 12 COL ON DESKTOP) */}
+                      <div className="md:col-span-12">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 flex items-center gap-1"><MessageSquare size={12}/> Keterangan Barang (Opsional)</label>
+                        <input 
+                          placeholder="Contoh: Packing Kayu, Batch No, atau Catatan Khusus Barang" 
+                          className="w-full p-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
+                          value={row.description} 
+                          onChange={(e) => setRow(i, { description: e.target.value })}
+                        />
                       </div>
                   </div>
                   
