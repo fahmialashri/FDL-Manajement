@@ -197,18 +197,17 @@ export async function POST(req: Request) {
       </tr>
     `).join("");
 
-    // --- 2. TABEL SURAT JALAN (FIX 6 KOLOM SESUAI INSTRUKSI) ---
-    // No | Kode | Nama (+Warna) | Satuan | Jumlah | Keterangan
+    // --- 2. TABEL SURAT JALAN (URUTAN FIX 6 KOLOM: No | Kode | Nama | Satuan | Jumlah | Ket) ---
     const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
       <tr>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${idx + 1}</td>
         <td style="text-align:center; vertical-align: top; padding: 5px;"><b>${it.code}</b></td>
         <td style="vertical-align: top; padding: 5px; text-align: left;">
-          <b>${it.name}</b> ${it.color ? `<br/><small>Warna: ${it.color}</small>` : ""}
+          <b>${it.name}</b>
         </td>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${it.unit}</td>
         <td style="text-align:center; vertical-align: top; padding: 5px;">${it.qty}</td>
-        <td style="text-align:center; vertical-align: top; padding: 5px;">
+        <td style="text-align:center; vertical-align: top; padding: 5px; font-weight: bold;">
           ${it.description || "-"}
         </td>
       </tr>
