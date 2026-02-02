@@ -1,14 +1,12 @@
-import { NextResponse, NextRequest } from "next/server"; // Gunakan NextRequest
-import fs from "fs";
-import path from "path";
+import { NextResponse, NextRequest } from "next/server";
+import { supabaseAdmin } from "@/libs/supabaseAdmin"; // Pastikan path import benar
 
-// Gunakan NextRequest dan ganti struktur parameter kedua menjadi 'context'
 export async function GET(
   req: NextRequest, 
   context: { params: Promise<{ invoiceNo: string }> }
 ) {
   try {
-    // Sesuai aturan baru: params harus di-await dari context
+    // 1. Await params sesuai standar Next.js terbaru
     const { invoiceNo } = await context.params;
 
     if (!invoiceNo) {
@@ -16,16 +14,19 @@ export async function GET(
     }
 
     const decoded = decodeURIComponent(invoiceNo);
-    const STORAGE_DIR = path.join(process.cwd(), "storage");
-    const PDF_DIR = path.join(STORAGE_DIR, "pdf");
-
+    
+    // 2. Format nama file harus sama persis dengan saat upload di POST
     const fileName = `${decoded.replaceAll("/", "_")}.pdf`;
-    const pdfPath = path.join(PDF_DIR, fileName);
 
-    if (!fs.existsSync(pdfPath)) {
+    // 3. Ambil data dari Supabase Storage (bukan dari fs lokal)
+    const { data, error } = await supabaseAdmin.storage
+      .from("accounting") // Nama bucket Anda
+      .download(`pdf/${fileName}`); // Harus menyertakan path folder 'pdf/'
+
+    if (error || !data) {
       return NextResponse.json(
         {
-          error: "PDF not found",
+          error: "PDF tidak ditemukan di storage",
           invoiceNo: decoded,
           fileName,
         },
@@ -33,7 +34,8 @@ export async function GET(
       );
     }
 
-    const fileBuffer = fs.readFileSync(pdfPath);
+    // 4. Ubah Blob/File dari Supabase menjadi ArrayBuffer untuk Response
+    const fileBuffer = await data.arrayBuffer();
 
     return new NextResponse(fileBuffer, {
       status: 200,
@@ -44,6 +46,7 @@ export async function GET(
       },
     });
   } catch (e: any) {
+    console.error("View PDF Error:", e);
     return NextResponse.json({ error: e?.message || "Server error" }, { status: 500 });
   }
 }
