@@ -188,35 +188,31 @@ export async function POST(req: Request) {
     const stampBase64 = fs.existsSync(stampPath) ? `data:image/png;base64,${fs.readFileSync(stampPath).toString("base64")}` : logoBase64;
     const template = fs.readFileSync(templatePath, "utf-8");
 
-    // --- TABEL PDF DENGAN KODE & KETERANGAN ---
-    const itemsRows = dbResult.itemsDetailed.map((it) => `
-      <tr>
-        <td style="padding: 8px 5px;">
-          <b style="color: #1e40af;">${it.code}</b><br/>
-          <span>${it.name}</span>
-          ${it.description ? `<br/><i style="font-size: 9px; color: #64748b;">Catatan: ${it.description}</i>` : ""}
-        </td>
-        <td style="text-align:center">${it.color || "-"}</td>
-        <td style="text-align:center">${it.qty} ${it.unit}</td>
-        <td style="text-align:right">${formatRupiah(it.unit_price)}</td>
-        <td style="text-align:right">${formatRupiah(it.line)}</td>
-      </tr>
-    `).join("");
+    // --- TABEL PDF INVOICE (Bersih: Hanya Nama Barang) ---
+const itemsRows = dbResult.itemsDetailed.map((it) => `
+  <tr>
+    <td style="padding: 8px 5px; vertical-align: middle;">
+      <span>${it.name}</span> </td>
+    <td style="text-align:center; vertical-align: middle;">${it.color || "-"}</td>
+    <td style="text-align:center; vertical-align: middle;">${it.qty} ${it.unit}</td>
+    <td style="text-align:right; vertical-align: middle;">${formatRupiah(it.unit_price)}</td>
+    <td style="text-align:right; vertical-align: middle;">${formatRupiah(it.line)}</td>
+  </tr>
+`).join("");
 
-    // --- TABEL SURAT JALAN DENGAN KETERANGAN ---
-    const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
-      <tr>
-        <td style="text-align:center">${idx + 1}</td>
-        <td style="text-align:center"><b>${it.code}</b></td>
-        <td>
-          <b>${it.name}</b>
-          ${it.description ? `<br/><small style="color: #475569;">(${it.description})</small>` : ""}
-        </td>
-        <td style="text-align:center">${it.color || "-"}</td>
-        <td style="text-align:center">${it.qty}</td>
-        <td style="text-align:center">${it.unit}</td>
-      </tr>
-    `).join("");
+// --- TABEL SURAT JALAN (Tetap Lengkap dengan Kode & Keterangan) ---
+const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
+  <tr>
+    <td style="text-align:center; vertical-align: middle; padding: 5px;">${idx + 1}</td>
+    <td style="text-align:center; vertical-align: middle; padding: 5px;"><b>${it.code}</b></td>
+    <td style="vertical-align: middle; padding: 5px;"><b>${it.name}</b></td>
+    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.color || "-"}</td>
+    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.qty}</td>
+    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.unit}</td>
+    <td style="text-align:center; vertical-align: middle; padding: 5px; font-size: 10px;">
+      ${it.description || "-"} </td>
+  </tr>
+`).join("");
 
     const html = replaceAll(template, {
       "{{logo_src}}": logoBase64,
