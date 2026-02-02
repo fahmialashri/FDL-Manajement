@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/prisma-client";
 import { supabaseAdmin } from "@/libs/supabaseAdmin";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic"; // 👈 Tambahkan ini untuk mencegah error build
+
 export async function POST(req: Request) {
   try {
     const { password } = await req.json();
