@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { prisma } from "@/prisma-client"; 
 import { formatRupiah } from "@/libs/format"; 
 
+// --- PENTING: TAMBAHKAN INI AGAR DATA SELALU TERBARU ---
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 import { 
   TrendingUp, 
   ArrowRight, 
@@ -12,7 +16,7 @@ import {
   ReceiptText
 } from "lucide-react";
 
-// --- 1. LOGIKA DATA (Tetap Sama) ---
+// --- 1. LOGIKA DATA ---
 function startOfMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 function startOfPrevMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth() - 1, 1); }
 function endOfPrevMonth(d: Date) { return new Date(d.getFullYear(), d.getMonth(), 0, 23, 59, 59, 999); }
@@ -23,7 +27,7 @@ export default async function DashboardPage() {
   const prevMonthStart = startOfPrevMonth(now);
   const prevMonthEnd = endOfPrevMonth(now);
 
-  // Ambil Data Omset
+  // Ambil Data Omset (Agregasi dari Ledger)
   const [incomeThisMonthAgg, incomePrevMonthAgg] = await Promise.all([
     prisma.accountingLedger.aggregate({ where: { type: "INCOME", date: { gte: thisMonthStart } }, _sum: { amount: true } }),
     prisma.accountingLedger.aggregate({ where: { type: "INCOME", date: { gte: prevMonthStart, lte: prevMonthEnd } }, _sum: { amount: true } }),
@@ -31,26 +35,26 @@ export default async function DashboardPage() {
 
   const revenueThisMonth = Number(incomeThisMonthAgg._sum.amount ?? 0);
   const revenuePrevMonth = Number(incomePrevMonthAgg._sum.amount ?? 0);
+  
+  // Kalkulasi Pertumbuhan
   const growth = revenuePrevMonth === 0 ? (revenueThisMonth > 0 ? 100 : 0) : ((revenueThisMonth - revenuePrevMonth) / revenuePrevMonth) * 100;
 
-  // Ambil Data Invoice
+  // Ambil Data Invoice & Status
   const [unpaidCount, paidCount] = await Promise.all([
     prisma.invoice.count({ where: { status: "UNPAID" } }),
     prisma.invoice.count({ where: { status: "PAID" } }),
   ]);
 
+  // Ambil Transaksi Terbaru (Limit 6)
   const recentInvoices = await prisma.invoice.findMany({
     orderBy: { createdAt: "desc" },
     take: 6,
-    select: { id: true, invoiceNo: true, date: true, grandTotal: true, status: true, customer: { select: { name: true } } },
+    include: { customer: true }
   });
 
   return (
-    // HAPUS flex dan pb-24, ganti dengan padding biasa
     <div className="p-4 md:p-8 space-y-6">
         
-        {/* --- TIDAK ADA SIDEBAR DISINI (Sudah diurus Layout Global) --- */}
-
         {/* TOP HEADER */}
         <header className="flex justify-between items-center">
           <div>
@@ -97,7 +101,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           
-          {/* TAMPILAN TABEL (KHUSUS LAPTOP) */}
+          {/* TAMPILAN TABEL (DESKTOP) */}
           <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="bg-slate-50 text-slate-500 uppercase font-bold text-xs">
@@ -125,7 +129,7 @@ export default async function DashboardPage() {
             </table>
           </div>
 
-          {/* TAMPILAN KARTU (KHUSUS HP) */}
+          {/* TAMPILAN KARTU (MOBILE) */}
           <div className="md:hidden divide-y divide-slate-100">
               {recentInvoices.length === 0 ? (
                 <p className="p-4 text-center text-sm text-slate-400">Belum ada data.</p>
@@ -134,8 +138,8 @@ export default async function DashboardPage() {
                   <div key={inv.id} className="p-4 flex flex-col gap-2">
                      <div className="flex justify-between items-start">
                         <div>
-                           <p className="font-bold text-slate-800 text-sm">{inv.customer.name}</p>
-                           <p className="text-xs text-slate-500">{inv.invoiceNo} • {new Date(inv.date).toLocaleDateString('id-ID')}</p>
+                            <p className="font-bold text-slate-800 text-sm">{inv.customer.name}</p>
+                            <p className="text-xs text-slate-500">{inv.invoiceNo} • {new Date(inv.date).toLocaleDateString('id-ID')}</p>
                         </div>
                         <StatusBadge status={inv.status} />
                      </div>
@@ -148,15 +152,11 @@ export default async function DashboardPage() {
               )}
           </div>
         </div>
-
-        {/* --- TIDAK ADA BOTTOM NAV DISINI (Sudah diurus Layout Global) --- */}
-
     </div>
   );
 }
 
 // --- SUB COMPONENTS ---
-
 function StatusBadge({ status }: { status: string }) {
   const styles = status === 'PAID' || status === 'LUNAS' 
     ? 'bg-green-100 text-green-700' 
