@@ -1,8 +1,14 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/prisma-client";
-// Hapus import fs dan path karena tidak akan digunakan di Vercel
+import { createClient } from "@supabase/supabase-js";
 // @ts-ignore
 import ExcelJS from "exceljs";
+
+// Inisialisasi Supabase dengan Service Role Key untuk akses tulis
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   try {
@@ -14,8 +20,7 @@ export async function POST(req: Request) {
     const nominal = Number(amount);
     const txDate = new Date(date);
 
-    // 1. Simpan ke DB (Neon)
-    // Pastikan DATABASE_URL di Vercel sudah menggunakan ?sslmode=require
+    // 1. Simpan ke DB (Neon/Prisma)
     const lastLedger = await prisma.accountingLedger.findFirst({ orderBy: { id: "desc" } });
     const currentBalance = Number(lastLedger?.balance ?? 0) + nominal;
 
@@ -30,12 +35,8 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2. Generate Excel di Memory (Buffer) 
-    // Kita mengambil SEMUA data dari database agar Excel selalu up-to-date
-    const allLedgers = await prisma.accountingLedger.findMany({
-      orderBy: { date: "asc" }
-    });
-
+    // 2. Generate Excel di Memory (Buffer)
+    const allLedgers = await prisma.accountingLedger.findMany({ orderBy: { date: "asc" } });
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Ledger");
 
@@ -48,12 +49,6 @@ export async function POST(req: Request) {
       { header: "SALDO (BALANCE)", key: "balance", width: 25 },
     ];
 
-    // Styling Header
-    const headerRow = ws.getRow(1);
-    headerRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
-    headerRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1F4E78" } };
-
-    // Isi Data dari Database
     allLedgers.forEach((item) => {
       const row = ws.addRow({
         date: item.date,
@@ -63,28 +58,38 @@ export async function POST(req: Request) {
         credit: item.type === "EXPENSE" ? item.amount : 0,
         balance: item.balance,
       });
-
-      // Styling Baris Mata Uang
       const currencyFmt = '_("Rp"* #,##0_);_("Rp"* (#,##0);_("Rp"* "-"??_);_(@_)';
-      row.getCell(4).numFmt = currencyFmt;
-      row.getCell(5).numFmt = currencyFmt;
-      row.getCell(6).numFmt = currencyFmt;
+      [4, 5, 6].forEach(col => row.getCell(col).numFmt = currencyFmt);
     });
 
-    // 3. Tulis ke Buffer (Bukan File)
     const buffer = await wb.xlsx.writeBuffer();
 
-    // 4. Kirim Response dalam bentuk File yang bisa di-download
-    return new NextResponse(buffer, {
-      status: 200,
-      headers: {
-        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="Accounting_Ledger_${Date.now()}.xlsx"`,
-      },
+    // 3. Upload ke Supabase Storage
+    const fileName = `ledgers/Accounting_Ledger_${Date.now()}.xlsx`;
+    
+    // Pastikan Anda sudah membuat bucket bernama 'accounting' di dashboard Supabase
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("accounting") 
+      .upload(fileName, buffer, {
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        upsert: true,
+      });
+
+    if (uploadError) throw uploadError;
+
+    // 4. Dapatkan Public URL untuk Download
+    const { data: { publicUrl } } = supabase.storage
+      .from("accounting")
+      .getPublicUrl(fileName);
+
+    return NextResponse.json({ 
+      ok: true, 
+      message: "Transaksi tercatat dan Excel diperbarui",
+      downloadUrl: publicUrl 
     });
 
   } catch (e: any) {
-    console.error(e);
+    console.error("Error:", e.message);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
