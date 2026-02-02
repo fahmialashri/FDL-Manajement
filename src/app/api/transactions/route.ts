@@ -41,7 +41,7 @@ type Payload = {
     unit: string;
     qty: number;
     unit_price: number;
-    description: string; // 👈 Tambahkan Keterangan di tipe data
+    description: string;
   }>;
 };
 
@@ -126,7 +126,6 @@ export async function POST(req: Request) {
     const payload = (await req.json()) as Payload;
     const txDate = new Date(payload.date);
 
-    // --- DB TRANSACTION START ---
     const dbResult = await prisma.$transaction(async (tx) => {
       const customer = payload.customer_id
         ? await tx.customer.findUnique({ where: { id: payload.customer_id } })
@@ -162,8 +161,6 @@ export async function POST(req: Request) {
               color: it.color || "", 
               unitPrice: it.unit_price, 
               subtotal: it.line,
-              // Jika schema prisma kamu punya field notes/description, simpan di sini
-              // notes: it.description 
             })) 
           },
           suratJalan: { create: { sjNo, driverName: payload.logistics.driver_name, plateNumber: payload.logistics.plate_number || "-", transportMethod: payload.logistics.transport_method === "Car" ? "Mobil" : "Motor" } },
@@ -178,7 +175,6 @@ export async function POST(req: Request) {
 
       return { inv, customer, invoiceNo, sjNo, itemsDetailed, subtotal, dpp, ppn, total };
     });
-    // --- DB TRANSACTION END ---
 
     const logoPath = path.join(process.cwd(), "public", "logo.png");
     const stampPath = path.join(process.cwd(), "public", "inv-stamp.png");
@@ -188,31 +184,35 @@ export async function POST(req: Request) {
     const stampBase64 = fs.existsSync(stampPath) ? `data:image/png;base64,${fs.readFileSync(stampPath).toString("base64")}` : logoBase64;
     const template = fs.readFileSync(templatePath, "utf-8");
 
-    // --- TABEL PDF INVOICE (Bersih: Hanya Nama Barang) ---
-const itemsRows = dbResult.itemsDetailed.map((it) => `
-  <tr>
-    <td style="padding: 8px 5px; vertical-align: middle;">
-      <span>${it.name}</span> </td>
-    <td style="text-align:center; vertical-align: middle;">${it.color || "-"}</td>
-    <td style="text-align:center; vertical-align: middle;">${it.qty} ${it.unit}</td>
-    <td style="text-align:right; vertical-align: middle;">${formatRupiah(it.unit_price)}</td>
-    <td style="text-align:right; vertical-align: middle;">${formatRupiah(it.line)}</td>
-  </tr>
-`).join("");
+    // --- 1. TABEL INVOICE (PAKAI vertical-align: top) ---
+    const itemsRows = dbResult.itemsDetailed.map((it) => `
+      <tr>
+        <td style="padding: 5px; vertical-align: top; text-align: left;">
+          <span>${it.name}</span>
+        </td>
+        <td style="text-align:center; vertical-align: top; padding: 5px;">${it.color || "-"}</td>
+        <td style="text-align:center; vertical-align: top; padding: 5px;">${it.qty} ${it.unit}</td>
+        <td style="text-align:right; vertical-align: top; padding: 5px;">${formatRupiah(it.unit_price)}</td>
+        <td style="text-align:right; vertical-align: top; padding: 5px;">${formatRupiah(it.line)}</td>
+      </tr>
+    `).join("");
 
-// --- TABEL SURAT JALAN (Tetap Lengkap dengan Kode & Keterangan) ---
-const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
-  <tr>
-    <td style="text-align:center; vertical-align: middle; padding: 5px;">${idx + 1}</td>
-    <td style="text-align:center; vertical-align: middle; padding: 5px;"><b>${it.code}</b></td>
-    <td style="vertical-align: middle; padding: 5px;"><b>${it.name}</b></td>
-    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.color || "-"}</td>
-    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.qty}</td>
-    <td style="text-align:center; vertical-align: middle; padding: 5px;">${it.unit}</td>
-    <td style="text-align:center; vertical-align: middle; padding: 5px; font-size: 10px;">
-      ${it.description || "-"} </td>
-  </tr>
-`).join("");
+    // --- 2. TABEL SURAT JALAN (SESUAI URUTAN KOLOM DI GAMBAR) ---
+    // Urutan: No | Kode Barang | Nama Barang | Satuan | Jumlah | Ket.
+    const sjItemsRows = dbResult.itemsDetailed.map((it, idx) => `
+      <tr>
+        <td style="text-align:center; vertical-align: top; padding: 5px;">${idx + 1}</td>
+        <td style="text-align:center; vertical-align: top; padding: 5px;"><b>${it.code}</b></td>
+        <td style="vertical-align: top; padding: 5px; text-align: left;">
+          <b>${it.name}</b>
+        </td>
+        <td style="text-align:center; vertical-align: top; padding: 5px;">${it.unit}</td>
+        <td style="text-align:center; vertical-align: top; padding: 5px;">${it.qty}</td>
+        <td style="text-align:center; vertical-align: top; padding: 5px; font-weight: bold;">
+          ${it.description || "-"}
+        </td>
+      </tr>
+    `).join("");
 
     const html = replaceAll(template, {
       "{{logo_src}}": logoBase64,
