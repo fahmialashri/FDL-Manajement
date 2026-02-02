@@ -3,6 +3,8 @@ import { prisma } from "@/prisma-client";
 import { createClient } from "@supabase/supabase-js";
 import ExcelJS from "exceljs";
 
+export const dynamic = 'force-dynamic';
+
 const supabase = createClient(
   process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL!, // fallback
   process.env.SUPABASE_SERVICE_ROLE_KEY!,
