@@ -17,6 +17,9 @@ import { replaceAll } from "@/libs/html";
 import { supabaseAdmin } from "@/libs/supabaseAdmin";
 
 export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+const CHROMIUM_PACK_URL = "https://github.com/sparticuz/chromium/releases/download/v143.0.0/chromium-v143.0.0-pack.tar";
 
 type Payload = {
   date: string;
@@ -339,10 +342,15 @@ export async function POST(req: Request) {
 
     const browser = await puppeteer.launch({
   args: chromium.args,
-  executablePath: await chromium.executablePath(),
-  headless: true,
+  // Hapus chromium.defaultViewport karena tidak ada di tipe datanya
+  defaultViewport: {
+    width: 1920,
+    height: 1080,
+  },
+  executablePath: await chromium.executablePath(CHROMIUM_PACK_URL),
+  // Ganti chromium.headless menjadi string "shell" (rekomendasi terbaru) atau true
+  headless: "shell" as any, 
 });
-
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
