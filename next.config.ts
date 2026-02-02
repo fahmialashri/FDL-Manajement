@@ -1,12 +1,8 @@
 import type { NextConfig } from "next";
 
-const nextConfig: any = { // Ubah sementara ke 'any' agar TS tidak rewel
-  /* config options here */
-  
-  // Update daftar external packages untuk OCR & PDF
+const nextConfig: any = {
   serverExternalPackages: ["tesseract.js", "pdf2json"],
 
-  // Bypass error build agar web Bos langsung ONLINE
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -14,9 +10,11 @@ const nextConfig: any = { // Ubah sementara ke 'any' agar TS tidak rewel
     ignoreDuringBuilds: true,
   },
 
-  // Config lainnya
   experimental: {
-     // reactCompiler: true,
+    // paksa Next ikut bundling chromium files
+    outputFileTracingIncludes: {
+      "*": ["node_modules/@sparticuz/chromium-min/**"],
+    },
   },
 };
 

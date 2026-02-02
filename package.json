@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.17.0",
-    "@sparticuz/chromium": "^143.0.4",
+    "@sparticuz/chromium-min": "^143.0.4",
     "@supabase/supabase-js": "^2.93.3",
     "exceljs": "^4.4.0",
     "lucide-react": "^0.563.0",
