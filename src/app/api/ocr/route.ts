@@ -3,6 +3,8 @@ import * as Tesseract from "tesseract.js";
 // @ts-ignore
 import PDFParser from "pdf2json";
 
+export const dynamic = "force-dynamic"; // 👈 WAJIB A
+
 export const maxDuration = 60; // Biar gak timeout kalau file gede
 
 type Payload = {

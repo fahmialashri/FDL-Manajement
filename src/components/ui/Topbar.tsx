@@ -38,7 +38,6 @@ export default function Topbar({ children }: { children: React.ReactNode }) {
       <aside className="hidden md:flex w-64 bg-slate-900 text-white flex-col fixed h-full z-50 shadow-xl">
         <div className="p-6 border-b border-slate-800">
           <h1 className="text-xl font-bold text-yellow-400 tracking-tight">FDL WARNA MANDIRI</h1>
-          <p className="text-xs text-slate-400 mt-1">DIREKTUR UTAMA</p>
         </div>
         
         <nav className="flex-1 p-4 space-y-2 flex flex-col">

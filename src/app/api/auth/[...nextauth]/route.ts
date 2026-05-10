@@ -20,7 +20,7 @@ const authOptions: AuthOptions = {
           credentials?.username === validUser &&
           credentials?.password === validPass
         ) {
-          return { id: "1", name: "Admin Boss", email: "admin@company.com" };
+          return { id: "1", name: "Admin ", email: "admin@company.com" };
         }
         return null;
       }

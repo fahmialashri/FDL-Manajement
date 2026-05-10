@@ -88,7 +88,7 @@ export default async function DashboardPage() {
         <div className="bg-blue-800 md:bg-gradient-to-r md:from-blue-900 md:to-blue-700 rounded-2xl p-6 text-white shadow-lg relative overflow-hidden border border-blue-700">
           <div className="relative z-10">
             <h1 className="text-xl md:text-3xl font-bold mb-2">
-              Selamat Datang, <span className="text-yellow-400">Bos Fahmi!</span> 👋
+              Selamat Datang, <span className="text-yellow-400"></span> 👋
             </h1>
             <div className="flex gap-4 mt-4">
                <div className="bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
